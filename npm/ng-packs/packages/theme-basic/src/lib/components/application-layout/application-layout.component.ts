@@ -1,10 +1,10 @@
 import {
   ABP,
   ApplicationConfiguration,
+  AuthService,
   Config,
   ConfigState,
   eLayoutType,
-  GetAppConfiguration,
   SessionState,
   SetLanguage,
   takeUntilDestroy,
@@ -14,18 +14,13 @@ import {
   AfterViewInit,
   Component,
   OnDestroy,
-  QueryList,
   Renderer2,
   TemplateRef,
   TrackByFunction,
   ViewChild,
-  ViewChildren,
-  ElementRef,
 } from '@angular/core';
-import { NgbDropdown } from '@ng-bootstrap/ng-bootstrap';
 import { Navigate, RouterState } from '@ngxs/router-plugin';
 import { Select, Store } from '@ngxs/store';
-import { OAuthService } from 'angular-oauth2-oidc';
 import compare from 'just-compare';
 import { fromEvent, Observable } from 'rxjs';
 import { debounceTime, filter, map } from 'rxjs/operators';
@@ -33,6 +28,7 @@ import snq from 'snq';
 import { AddNavigationElement } from '../../actions';
 import { Layout } from '../../models/layout';
 import { LayoutState } from '../../states';
+import { eNavigationElementNames } from '../../enums/navigation-element-names';
 
 @Component({
   selector: 'abp-layout-application',
@@ -78,7 +74,10 @@ export class ApplicationLayoutComponent implements AfterViewInit, OnDestroy {
   get defaultLanguage$(): Observable<string> {
     return this.languages$.pipe(
       map(
-        languages => snq(() => languages.find(lang => lang.cultureName === this.selectedLangCulture).displayName),
+        languages =>
+          snq(
+            () => languages.find(lang => lang.cultureName === this.selectedLangCulture).displayName,
+          ),
         '',
       ),
     );
@@ -86,7 +85,11 @@ export class ApplicationLayoutComponent implements AfterViewInit, OnDestroy {
 
   get dropdownLanguages$(): Observable<ApplicationConfiguration.Language[]> {
     return this.languages$.pipe(
-      map(languages => snq(() => languages.filter(lang => lang.cultureName !== this.selectedLangCulture)), []),
+      map(
+        languages =>
+          snq(() => languages.filter(lang => lang.cultureName !== this.selectedLangCulture)),
+        [],
+      ),
     );
   }
 
@@ -100,7 +103,11 @@ export class ApplicationLayoutComponent implements AfterViewInit, OnDestroy {
 
   trackElementByFn: TrackByFunction<ABP.FullRoute> = (_, element) => element;
 
-  constructor(private store: Store, private oauthService: OAuthService, private renderer: Renderer2) {}
+  constructor(
+    private store: Store,
+    private renderer: Renderer2,
+    private authService: AuthService,
+  ) {}
 
   private checkWindowWidth() {
     setTimeout(() => {
@@ -121,13 +128,15 @@ export class ApplicationLayoutComponent implements AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit() {
-    const navigations = this.store.selectSnapshot(LayoutState.getNavigationElements).map(({ name }) => name);
+    const navigations = this.store
+      .selectSnapshot(LayoutState.getNavigationElements)
+      .map(({ name }) => name);
 
-    if (navigations.indexOf('LanguageRef') < 0) {
+    if (navigations.indexOf(eNavigationElementNames.Language) < 0) {
       this.store.dispatch(
         new AddNavigationElement([
-          { element: this.languageRef, order: 4, name: 'LanguageRef' },
-          { element: this.currentUserRef, order: 5, name: 'CurrentUserRef' },
+          { element: this.languageRef, order: 4, name: eNavigationElementNames.Language },
+          { element: this.currentUserRef, order: 5, name: eNavigationElementNames.User },
         ]),
       );
     }
@@ -145,10 +154,7 @@ export class ApplicationLayoutComponent implements AfterViewInit, OnDestroy {
     this.checkWindowWidth();
 
     fromEvent(window, 'resize')
-      .pipe(
-        takeUntilDestroy(this),
-        debounceTime(150),
-      )
+      .pipe(takeUntilDestroy(this), debounceTime(150))
       .subscribe(() => {
         this.checkWindowWidth();
       });
@@ -161,13 +167,13 @@ export class ApplicationLayoutComponent implements AfterViewInit, OnDestroy {
   }
 
   logout() {
-    this.oauthService.logOut();
-    this.store.dispatch(
-      new Navigate(['/'], null, {
-        state: { redirectUrl: this.store.selectSnapshot(RouterState).state.url },
-      }),
-    );
-    this.store.dispatch(new GetAppConfiguration());
+    this.authService.logout().subscribe(() => {
+      this.store.dispatch(
+        new Navigate(['/'], null, {
+          state: { redirectUrl: this.store.selectSnapshot(RouterState).state.url },
+        }),
+      );
+    });
   }
 
   openChange(event: boolean, childrenContainer: HTMLDivElement) {

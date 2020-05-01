@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using CommonMark;
 using Microsoft.AspNetCore.Html;
 using Microsoft.AspNetCore.Mvc.Localization;
@@ -16,7 +18,7 @@ namespace Volo.Blogging.Pages.Blog
 
         public const string DefaultTitle = "Blog";
 
-        public const int MaxShortContentLength = 128;
+        public const int MaxShortContentLength = 200;
 
         public string GetTitle(string title = null)
         {
@@ -28,32 +30,33 @@ namespace Volo.Blogging.Pages.Blog
             return title;
         }
 
-        public string GetShortContent(string content) //TODO: This should be moved to its own place!
+        public string GetShortContent(string content) 
         {
-            var openingTag = "<p>";
-            var closingTag = "</p>";
-
             var html = RenderMarkdownToString(content);
-            if (string.IsNullOrWhiteSpace(html))
-            {
-                return "";
-            }
-            var splittedHtml = html.Split(closingTag);
+            var plainText = Regex.Replace(html, "<[^>]*>", "");
 
-            if (splittedHtml.Length < 1)
+            if (string.IsNullOrWhiteSpace(plainText))
             {
                 return "";
             }
 
-            var firstHtmlPart = splittedHtml[0];
-            var paragraphStartIndex = firstHtmlPart.IndexOf(openingTag, StringComparison.Ordinal) + openingTag.Length;
+            var shortContent = new StringBuilder();
+            var lines = plainText.Split(Environment.NewLine).Where(s => !string.IsNullOrWhiteSpace(s));
 
-            if (firstHtmlPart.Length - paragraphStartIndex <= MaxShortContentLength)
+            foreach (var line in lines)
             {
-                return firstHtmlPart.Substring(paragraphStartIndex);
+                if (shortContent.Length < MaxShortContentLength)
+                {
+                    shortContent.Append($" {line}");
+                }
+                
+                if(shortContent.Length >= MaxShortContentLength)
+                {
+                    return shortContent.ToString().Substring(0, MaxShortContentLength) + "...";
+                }
             }
 
-            return firstHtmlPart.Substring(paragraphStartIndex, MaxShortContentLength) + "...";
+            return shortContent.ToString();
         }
 
         public IHtmlContent RenderMarkdownToHtml(string content)

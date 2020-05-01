@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <Import Project="..\..\..\common.test.props" />
 
@@ -6,13 +6,6 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <RootNamespace />
   </PropertyGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Include="Volo\Abp\Emailing\TestTemplates\*\*.tpl" />
-    <None Remove="Volo\Abp\Emailing\TestTemplates\*\*.tpl" />
-    <EmbeddedResource Include="Volo\Abp\Emailing\Localization\*.json" />
-    <None Remove="Volo\Abp\Emailing\Localization\*.json" />
-  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Volo.Abp.Emailing\Volo.Abp.Emailing.csproj" />

@@ -1,8 +1,6 @@
 import { Component } from '@angular/core';
-import { ConfirmationService } from '../../services/confirmation.service';
 import { Confirmation } from '../../models/confirmation';
-import { LocalizationService } from '@abp/ng.core';
-import { Toaster } from '../../models/toaster';
+import { ConfirmationService } from '../../services/confirmation.service';
 
 @Component({
   selector: 'abp-confirmation',
@@ -10,9 +8,9 @@ import { Toaster } from '../../models/toaster';
   styleUrls: ['./confirmation.component.scss'],
 })
 export class ConfirmationComponent {
-  confirm = Toaster.Status.confirm;
-  reject = Toaster.Status.reject;
-  dismiss = Toaster.Status.dismiss;
+  confirm = Confirmation.Status.confirm;
+  reject = Confirmation.Status.reject;
+  dismiss = Confirmation.Status.dismiss;
 
   visible = false;
 
@@ -33,17 +31,14 @@ export class ConfirmationComponent {
     }
   }
 
-  constructor(
-    private confirmationService: ConfirmationService,
-    private localizationService: LocalizationService,
-  ) {
+  constructor(private confirmationService: ConfirmationService) {
     this.confirmationService.confirmation$.subscribe(confirmation => {
       this.data = confirmation;
       this.visible = !!confirmation;
     });
   }
 
-  close(status: Toaster.Status) {
+  close(status: Confirmation.Status) {
     this.confirmationService.clear(status);
   }
 }
