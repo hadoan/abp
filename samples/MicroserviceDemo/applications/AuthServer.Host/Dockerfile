@@ -5,8 +5,21 @@ EXPOSE 80
 FROM mcr.microsoft.com/dotnet/core/sdk:3.0-buster AS build
 WORKDIR /src
 COPY . .
-WORKDIR "/src/samples/MicroserviceDemo/applications/AuthServer.Host"
+
+RUN ls
+
+WORKDIR "/src/samples/MicroserviceDemo"
+
+RUN ls
+
 RUN dotnet restore -nowarn:msb3202,nu1503
+
+
+
+WORKDIR "/src/samples/MicroserviceDemo/applications/AuthServer.Host"
+
+RUN ls
+
 RUN dotnet build --no-restore -c Release -o /app
 
 FROM build AS publish
